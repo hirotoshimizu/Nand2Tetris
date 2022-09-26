@@ -97,47 +97,19 @@ class JackTokenizer:
 
         if matched is None:
             return None
-        # print("self.cursor len")
-        # print(len(matched.group(0)))
         self.cursor += len(matched.group(0))
-
-        # print("matched.group(0)")
-        # print(pattern)
-        # print(type(string))
-        # print(matched)
-        # print(type(matched.group(0)))
-        # print(matched.group(0))
-        # print("self.cursor")
-        # print(self.cursor)
-
         return matched.group(0)
 
-    # getNextToken() == advance()
     def advance(self):
-        # print("orgggggggg")
-        # print(self.string)
         if not self.has_more_tokens():
             return None
 
         string = str(self.string)[self.cursor :]
-        # print("stringggg")
-        # print(string)
-        # print(self.cursor)
-
-        # if type(self.string) is int and string:
         if type(self.string) is int:
             string = int(string)
-        # print("stringgggsssss")
-        # print(type(string))
-        # print(string)
 
         for pattern in keyword:
-            # print(pattern)
             token_value = self.match(pattern[0], string)
-            # print("token_valueeeeeee")
-            # print(type(token_value))
-            # print(token_value)
-            # print(pattern[1])
 
             if token_value is None:
                 continue
