@@ -43,7 +43,7 @@ class CompilationEngine:
     #    : literal
     #    ;
     def program(self) -> str:
-        return self.class_dec()
+        return f"<class>\n" f"{self.class_dec()}\n" f"</class>"
 
     # class
     #   : 'class' class_name '{' class_var_dec* subroutine_dec* '}'
@@ -92,16 +92,19 @@ class CompilationEngine:
         var_name = self.list_to_string(self.var_names())
         self.eat(";")
         return (
+            f"<classVarDec>\n"
             f"<keyword> {pre['value']} </keyword>\n"
-            f"{type}\n{var_name}\n"
-            f"<symbol> ; </symbol>"
+            f"{type}\n"
+            f"{var_name}\n"
+            f"<symbol> ; </symbol>\n"
+            f"</classVarDec>"
         )
 
     def var_names(self) -> list[str]:
         var_name_list = [self.var_name()]
         while self.lookahead["type"] == "," and self.eat(","):
             var_name_list.append("<symbol> , </symbol>")
-            var_name_list.append(self.var_name())
+            var_name_list.append(f"{self.var_name()}")
         return var_name_list
 
     # subrouine_dec
@@ -127,19 +130,21 @@ class CompilationEngine:
         parameter_list = self.parameter_list()
         if parameter_list:
             parameter_list = self.list_to_string(parameter_list)
-        # if parameter_list == "":
-        #     print("ppppppppppppppppppppppppppppppppppppppppp")
         self.eat(")")
 
         subroutine_body = self.subroutine_body()
 
         return (
-            f"{declaration}\n{type}\n{subroutine_name}\n"
+            f"<subroutineDec>\n"
+            f"{declaration}\n"
+            f"{type}\n"
+            f"{subroutine_name}\n"
             f"<symbol> ( </symbol>\n"
             f"{parameter_list if parameter_list else ''}"
             f"{self.new_line_char if parameter_list else ''}"
             f"<symbol> ) </symbol>\n"
             f"{subroutine_body}"
+            f"</subroutineDec>"
         )
 
     # parameter_list
@@ -148,12 +153,8 @@ class CompilationEngine:
     def parameter_list(self) -> list[str]:
         if self.lookahead["value"] == ")":
             return None
-        parameter_list = []
-        type = self.type()
-        var_name = self.var_name()
 
-        parameter_list.append(type)
-        parameter_list.append(var_name)
+        parameter_list = [self.type(), self.var_name()]
 
         while self.lookahead["type"] == "," and self.eat(","):
             parameter_list.append("<symbol> , </symbol>")
@@ -169,7 +170,7 @@ class CompilationEngine:
         self.eat("{")
         while self.lookahead["type"] == "var":
             var_decs.append(self.var_dec())
-        statements = "\n".join(self.statements("}"))
+        statements = self.list_to_string(self.statements("}"))
         self.eat("}")
         var_decs = self.list_to_string(var_decs)
         if var_decs:
@@ -188,7 +189,7 @@ class CompilationEngine:
     def var_dec(self) -> str:
         self.eat("var")
         type = self.type()
-        var_name = self.var_name()
+        var_name = self.list_to_string(self.var_name_list())
         self.eat(";")
         return (
             f"<keyword> var </keyword>\n"
@@ -196,6 +197,13 @@ class CompilationEngine:
             f"{var_name}\n"
             f"<symbol> ; </symbol>"
         )
+
+    def var_name_list(self) -> list["str"]:
+        var_name_list = [self.var_name()]
+        while self.lookahead["type"] == "," and self.eat(","):
+            var_name_list.append("<symbol> , </symbol>")
+            var_name_list.append(self.var_name())
+        return var_name_list
 
     # statements
     #    : statement
@@ -239,7 +247,6 @@ class CompilationEngine:
         self.eat("{")
         statements = self.list_to_string(self.statements("}"))
         self.eat("}")
-
         return (
             f"<keyword> while </keyword>\n"
             f"<symbol> ( </symbol>\n"
@@ -263,8 +270,9 @@ class CompilationEngine:
     #    : subroutine_name '(' expression_list ')'
     #    | (className | varName)  '.' subroutin_name '(' expression_list ')'
     #    ;
-    def subroutine_call(self) -> str:
-        name = self.subroutine_name()
+    def subroutine_call(self, name: str | None = None) -> str:
+        if name is None:
+            name = self.subroutine_name()
         if self.lookahead["type"] == ".":
             self.eat(".")
             subroutine_name = self.subroutine_name()
@@ -316,7 +324,10 @@ class CompilationEngine:
         self.eat(";")
         if expression:
             return f"<keyword> return </keyword>\n{expression}\n<symbol> ; </symbol>"
-        return "<keyword> return </keyword>\n<symbol> ; </symbol>"
+        return """<returnStatement>
+<keyword> return </keyword>
+<symbol> ; </symbol>
+</returnStatement>"""
 
     # if_statement
     #    : 'if' '(' expression ')'  '{' statements '}'
@@ -329,13 +340,19 @@ class CompilationEngine:
         self.eat(")")
         self.eat("{")
         statements = self.statements("}")
-        if statements[0]:
+        if statements[0] is not None:
             statements = self.list_to_string(statements)
+        else:
+            statements = ""
         self.eat("}")
         if self.lookahead != None and self.lookahead["type"] == "else":
             self.eat("else")
             self.eat("{")
-            statements = self.statements("}")
+            else_statements = self.statements("}")
+            if else_statements[0]:
+                else_statements = self.list_to_string(else_statements)
+            else:
+                else_statements = ""
             self.eat("}")
             return (
                 f"<keyword> if </keyword>\n"
@@ -343,11 +360,13 @@ class CompilationEngine:
                 f"{expression}\n"
                 f"<symbol> ) </symbol>\n"
                 f"<symbol> {{ </symbol>\n"
+                f"{statements if statements else ''}"
+                f"{self.new_line_char if statements else ''}"
                 f"<symbol> }} </symbol>\n"
                 f"<keyword> else </keyword>\n"
                 f"<symbol> {{ </symbol>\n"
-                f"{statements[0] if statements[0] else ''}"
-                f"{self.new_line_char if statements[0] else ''}"
+                f"{else_statements if else_statements else ''}"
+                f"{self.new_line_char if else_statements else ''}"
                 f"<symbol> }} </symbol>"
             )
 
@@ -367,52 +386,86 @@ class CompilationEngine:
     def let_statement(self) -> str:
         self.eat("let")
         var_name = self.var_name()
+        lhs_expression = ""
+        if self.lookahead["value"] == "[":
+            self.eat("[")
+            lhs_expression = self.expression()
+            self.eat("]")
+            lhs_expression = (
+                f"<symbol> [ </symbol>\n"
+                f"{lhs_expression}\n"
+                f"<symbol> ] </symbol>\n"
+            )
+
         self.eat("SIMPLE_ASSIGN")
         expression = self.expression()
         self.eat(";")
         return (
             f"<keyword> let </keyword>\n"
             f"{var_name}\n"
+            f"{lhs_expression  if lhs_expression else ''}"
             f"<symbol> = </symbol>\n"
             f"{expression}\n"
             f"<symbol> ; </symbol>"
         )
 
-        # return f"<keyword> let </keyword>\n{var_name}\n<symble> = </symble>\n{string_constant}\n<symble> ; </symble>"
-
     # expression
     #     : term (op term)*
     #     ;
     def expression(self) -> str | None:
-        return self.term()
+        term = self.term()
+
+        if (
+            self.lookahead["type"] == "ADDITIVE_OPERATOR"
+            or self.lookahead["type"] == "MULTIPLICATIVE_OPERATOR"
+            or self.lookahead["type"] == "LOGICAL_AND"
+            or self.lookahead["type"] == "LOGICAL_OR"
+            or self.lookahead["type"] == "RELATIONAL_OPERATOR"
+            or self.lookahead["type"] == "SIMPLE_ASSIGN"
+        ):
+            if term:
+                op_term = [term]
+            op_term.append(self.list_to_string(self.term_list()))
+            op_term = self.list_to_string(op_term)
+
+            return op_term
+        return term
+
+    def term_list(self):
+        term_list = [self.op()]
+        term_list.append(self.expression())
+        return term_list
 
     # op
-    #    : '+' | '-' | '*' | '/' | '&' | '|' | '<' | '>' | =''
+    #    : '+' | '-' | '*' | '/' | '&' | '|' | '<' | '>' | '='
     #    ;
     def op(self) -> str:
-        token = self.eat("RELATIONAL_OPERATOR")
-        return f"<symble> {token['value']} </symble>"
+        op = self.lookahead["type"]
+        token = self.eat(op)
+        if token["value"] == "<":
+            token = "&lt;"
+        elif token["value"] == ">":
+            token = "&gt;"
+        elif token["value"] == "&":
+            token = "&amp;"
+        else:
+            token = token["value"]
+
+        return f"<symbol> {token} </symbol>"
 
     # term
     #    : integer_constant
-    #    | string_literal
+    #    | string_constant
     #    | keyword_constant
-    #    | varName
-    #    | varName '[' expression ']'
-    #    | subroutineCall
+    #    | var_name
+    #    | var_name '[' expression ']'
+    #    | subroutine_call
     #    | '(' expression ')'
-    #    | unaryOp term
+    #    | unary_op term
     #    ;
-
     def term(self) -> str | None:
-        # print("term--------------")
-        # print(self.lookahead)
-        if self.lookahead["type"] == "let":
-            return self.var_name()
-        elif self.lookahead["type"] == "int":
+        if self.lookahead["type"] == "int":
             return self.integer_constant()
-        elif self.lookahead["type"] == '"':
-            return self.string_constant()
         elif self.lookahead["type"] == "char":
             return self.string_constant()
         elif (
@@ -422,9 +475,39 @@ class CompilationEngine:
             or self.lookahead["type"] == "this"
         ):
             return self.keyword_constant()
+        elif self.lookahead["type"] == "let":
+            return self.var_name()
         elif self.lookahead["type"] == "IDENTIFIER":
-            return self.identifier()
-        return None
+            name = self.subroutine_name()
+            if self.lookahead["value"] == ".":
+                return self.subroutine_call(name)
+            elif self.lookahead["value"] == "[":
+                self.eat("[")
+                expression = self.expression()
+                self.eat("]")
+                return (
+                    f"{name}\n<symbol> [ </symbol>\n{expression}\n<symbol> ] </symbol>"
+                )
+            else:
+                return f"{name}"
+        elif self.lookahead["type"] == "(":
+            self.eat("(")
+            expression = self.expression()
+            self.eat(")")
+            return f"<symbol> ( </symbol>\n{expression}\n<symbol> ) </symbol>"
+        elif self.lookahead["value"] == "-" or self.lookahead["value"] == "~":
+            unary = self.unary_op()
+            term = self.term()
+            return f"{unary}\n{term}"
+        else:
+            return None
+
+    # unary_op
+    #    : '-' | '~'
+    #    ;
+    def unary_op(self) -> str:
+        token = self.eat(self.lookahead["type"])
+        return f"<symbol> {token['value']} </symbol>"
 
     # keyword_constant
     #    : 'true' | 'false' | 'null' | 'this'
@@ -447,7 +530,6 @@ class CompilationEngine:
         token = self.eat("char")
         if not token["value"].startswith('"'):
             return f"<stringConstant> {token['value']} </stringConstant>"
-
         return f"<stringConstant> {token['value'][1: -1]} </stringConstant>"
 
     # type

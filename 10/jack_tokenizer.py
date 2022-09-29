@@ -18,12 +18,16 @@ keyword = [
     ["^\/\*[\s\S]*?\*\/", None],
     # # Symbols, delimiters:
     ["^;", ";"],
+    ["^~", "~"],
     ["^\{", "{"],
     ["^\}", "}"],
+    ["^\[", "["],
+    ["^\]", "]"],
     ["^\(", "("],
     ["^\)", ")"],
     ["^,", ","],
     ["^\.", "."],
+    # ['^"', '"'],
     # ["/^\[/", "["],
     # ["/^\]/", "]"],
     # # Keywords:
@@ -65,17 +69,18 @@ keyword = [
     ["^=", "SIMPLE_ASSIGN"],
     # ["/^[\*\/\+\-]=/", "COMPLEX_ASSIGN"],
     # # Math operators: +, -, *, /
-    # ["/^[+\-]/", "ADDITIVE_OPERATOR"],
-    # ["/^[*\/]/", "MULTIPLICATIVE_OPERATOR"],
-    # # Relational operators: >, >=, <, <=
-    ["^[><]=?", "RELATIONAL_OPERATOR"],
+    ["^[+\-]", "ADDITIVE_OPERATOR"],
+    ["^[*\/]", "MULTIPLICATIVE_OPERATOR"],
+    # # Relational operators: >, <
+    ["^[><]", "RELATIONAL_OPERATOR"],
     # # Logical operators: &&, ||
-    # ["/^&&/", "LOGICAL_AND"],
-    # ["/^\|\|/", "LOGICAL_OR"],
+    ["^&", "LOGICAL_AND"],
+    ["^\|", "LOGICAL_OR"],
     # ["/^!/", "LOGICAL_NOT"],
     # char:
     ["^[a-zA-Z]+", "char"],
-    ['^"[a-zA-Z]+"', "char"],
+    ['^"[\w\s]+"', "char"],
+    # ['^"[a-zA-Z]+"', "char"],
     # ['^"[^"]*"', "char"],
     # ["/^'[^']*'/", "char"],
     #    ['/^'[^']*'/', 'STRING'],
