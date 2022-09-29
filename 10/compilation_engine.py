@@ -52,15 +52,30 @@ class CompilationEngine:
         self.eat("class")
         class_name = self.class_name()
         self.eat("{")
-        class_var_dec = self.list_to_string(self.class_var_decs())
-        subroutine_dec = self.list_to_string(self.subroutine_decs())
+        if self.lookahead["type"] == "static" or self.lookahead["type"] == "field":
+            class_var_dec = self.list_to_string(self.class_var_decs())
+        else:
+            class_var_dec = ""
+
+        if (
+            self.lookahead["type"] == "constructor"
+            or self.lookahead["type"] == "function"
+            or self.lookahead["type"] == "method"
+        ):
+            subroutine_dec = self.list_to_string(self.subroutine_decs())
+        else:
+            subroutine_dec = ""
         self.eat("}")
         return (
             f"<keyword> class </keyword>\n"
             f"{class_name}\n"
             f"<symbol> {{ </symbol>\n"
-            f"{class_var_dec}\n"
-            f"{subroutine_dec}\n"
+            # f"{class_var_dec}\n"
+            f"{class_var_dec if class_var_dec else ''}"
+            f"{self.new_line_char if class_var_dec else ''}"
+            f"{subroutine_dec if subroutine_dec else ''}"
+            f"{self.new_line_char if subroutine_dec else ''}"
+            # f"{subroutine_dec}\n"
             f"<symbol> }} </symbol>"
         )
 
@@ -528,6 +543,8 @@ class CompilationEngine:
     #    ;
     def string_constant(self) -> str:
         token = self.eat("char")
+        print("tokennnnnnnnnnnnn")
+        print(token)
         if not token["value"].startswith('"'):
             return f"<stringConstant> {token['value']} </stringConstant>"
         return f"<stringConstant> {token['value'][1: -1]} </stringConstant>"

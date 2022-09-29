@@ -27,14 +27,10 @@ keyword = [
     ["^\)", ")"],
     ["^,", ","],
     ["^\.", "."],
-    # ['^"', '"'],
-    # ["/^\[/", "["],
-    # ["/^\]/", "]"],
     # # Keywords:
     ["^let", "let"],
     ["^var", "var"],
     ["^boolean", "boolean"],
-    # ["^\blet\b", "let"],
     ["^int", "int"],
     ["^char", "char"],
     ["^if", "if"],
@@ -44,7 +40,6 @@ keyword = [
     ["^false", "false"],
     ["^null", "null"],
     ["^while", "while"],
-    # ["/^\bfor\b/", "for"],
     ["^function", "function"],
     ["^constructor", "constructor"],
     ["^method", "method"],
@@ -54,12 +49,8 @@ keyword = [
     ["^void", "void"],
     ["^type", "type"],
     ["^class", "class"],
-    # ["/^\bextends\b/", "extends"],
-    # ["/^\bsuper\b/", "super"],
-    # ["/^\bnew\b/", "new"],
     ["^this", "this"],
     # int
-    # ["/^\d+/", 'int'],
     ["^[0-9]+", "int"],
     # Identifiers:
     ["^\w+", "IDENTIFIER"],
@@ -79,11 +70,7 @@ keyword = [
     # ["/^!/", "LOGICAL_NOT"],
     # char:
     ["^[a-zA-Z]+", "char"],
-    ['^"[\w\s]+"', "char"],
-    # ['^"[a-zA-Z]+"', "char"],
-    # ['^"[^"]*"', "char"],
-    # ["/^'[^']*'/", "char"],
-    #    ['/^'[^']*'/', 'STRING'],
+    ['^"[\w\W\s][^"]*"', "char"],
 ]
 
 
